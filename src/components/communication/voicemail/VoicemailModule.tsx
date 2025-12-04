@@ -1,16 +1,22 @@
 import { useState } from 'react';
-import { Play, Pause, Phone, Trash2, FileText, User, Clock } from 'lucide-react';
+import { 
+  Play, Pause, Phone, Trash2, FileText, User, Clock, 
+  Sparkles, Loader2, AlertTriangle, CheckCircle, ListChecks 
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { VoicemailResponse } from '@/types/communication.types';
+import { VoicemailResponse, VoicemailSummary } from '@/types/communication.types';
 import { useCommunication } from '@/hooks/useCommunication';
+import { toast } from '@/hooks/use-toast';
 
 export function VoicemailModule() {
   const { voicemails, markVoicemailRead, deleteVoicemail } = useCommunication();
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [selectedVoicemail, setSelectedVoicemail] = useState<VoicemailResponse | null>(null);
+  const [summaries, setSummaries] = useState<Record<string, VoicemailSummary>>({});
+  const [summarizing, setSummarizing] = useState<string | null>(null);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -38,6 +44,86 @@ export function VoicemailModule() {
       if (!voicemail.isRead) {
         markVoicemailRead(voicemail.voicemailId);
       }
+    }
+  };
+
+  const handleSummarize = async (voicemailId: string) => {
+    if (summaries[voicemailId]) {
+      // Already summarized
+      return;
+    }
+    
+    setSummarizing(voicemailId);
+    
+    // Simulate AI summarization API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const voicemail = voicemails.find(vm => vm.voicemailId === voicemailId);
+    const transcript = voicemail?.transcript || '';
+    
+    // Mock AI summary based on transcript
+    let summary: VoicemailSummary;
+    
+    if (transcript.toLowerCase().includes('reschedule')) {
+      summary = {
+        summary: 'Client requesting to reschedule their upcoming appointment. Needs callback to confirm new time.',
+        actionItems: [
+          'Call back client to reschedule appointment',
+          'Check calendar availability for next week',
+          'Send confirmation once new appointment is set'
+        ],
+        urgency: 'medium',
+        generatedAt: new Date().toISOString(),
+      };
+    } else if (transcript.toLowerCase().includes('billing')) {
+      summary = {
+        summary: 'Client has a billing inquiry and is requesting clarification on their statement.',
+        actionItems: [
+          'Review client\'s billing history',
+          'Prepare explanation of charges',
+          'Call back with billing details'
+        ],
+        urgency: 'low',
+        generatedAt: new Date().toISOString(),
+      };
+    } else {
+      summary = {
+        summary: 'General inquiry from client. Message requires follow-up callback.',
+        actionItems: [
+          'Return client\'s call at earliest convenience',
+          'Review client notes before callback',
+          'Document outcome of callback'
+        ],
+        urgency: 'medium',
+        generatedAt: new Date().toISOString(),
+      };
+    }
+    
+    setSummaries(prev => ({
+      ...prev,
+      [voicemailId]: summary,
+    }));
+    setSummarizing(null);
+    
+    toast({
+      title: 'Summary Generated',
+      description: 'AI summary and action items are now available.',
+    });
+  };
+
+  const getUrgencyColor = (urgency: 'low' | 'medium' | 'high') => {
+    switch (urgency) {
+      case 'high': return 'bg-destructive/10 text-destructive border-destructive/20';
+      case 'medium': return 'bg-warning/10 text-warning border-warning/20';
+      case 'low': return 'bg-info/10 text-info border-info/20';
+    }
+  };
+
+  const getUrgencyIcon = (urgency: 'low' | 'medium' | 'high') => {
+    switch (urgency) {
+      case 'high': return <AlertTriangle className="w-4 h-4" />;
+      case 'medium': return <Clock className="w-4 h-4" />;
+      case 'low': return <CheckCircle className="w-4 h-4" />;
     }
   };
 
@@ -80,6 +166,12 @@ export function VoicemailModule() {
                         </span>
                         {!voicemail.isRead && (
                           <div className="w-2 h-2 rounded-full bg-primary" />
+                        )}
+                        {summaries[voicemail.voicemailId] && (
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <Sparkles className="w-3 h-3" />
+                            Summarized
+                          </Badge>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">{voicemail.phoneNumber}</p>
@@ -150,12 +242,77 @@ export function VoicemailModule() {
                 </div>
               </div>
 
+              {/* Transcript Section */}
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-sm font-medium mb-2">Transcript</p>
                 <p className="text-sm text-muted-foreground">
                   {selectedVoicemail.transcript || 'No transcript available'}
                 </p>
               </div>
+
+              {/* AI Summarize Button */}
+              {selectedVoicemail.transcript && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => handleSummarize(selectedVoicemail.voicemailId)}
+                  disabled={summarizing === selectedVoicemail.voicemailId || !!summaries[selectedVoicemail.voicemailId]}
+                >
+                  {summarizing === selectedVoicemail.voicemailId ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generating Summary...
+                    </>
+                  ) : summaries[selectedVoicemail.voicemailId] ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Summary Available Below
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Summarize with AI
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {/* AI Summary Card */}
+              {summaries[selectedVoicemail.voicemailId] && (
+                <div className="space-y-3 animate-fade-in">
+                  <Card className={`border ${getUrgencyColor(summaries[selectedVoicemail.voicemailId].urgency)}`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <span className="font-medium text-sm">AI Summary</span>
+                        <Badge variant="outline" className={`ml-auto ${getUrgencyColor(summaries[selectedVoicemail.voicemailId].urgency)}`}>
+                          {getUrgencyIcon(summaries[selectedVoicemail.voicemailId].urgency)}
+                          <span className="ml-1 capitalize">{summaries[selectedVoicemail.voicemailId].urgency} Priority</span>
+                        </Badge>
+                      </div>
+                      <p className="text-sm mb-4">
+                        {summaries[selectedVoicemail.voicemailId].summary}
+                      </p>
+                      <div className="border-t pt-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <ListChecks className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">Action Items</span>
+                        </div>
+                        <ul className="space-y-2">
+                          {summaries[selectedVoicemail.voicemailId].actionItems.map((item, index) => (
+                            <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 text-xs font-medium">
+                                {index + 1}
+                              </div>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
 
               <div className="flex gap-2">
                 <Button variant="success" className="flex-1">

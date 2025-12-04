@@ -15,6 +15,11 @@ export interface CallResponse {
   notes?: string;
   isRecorded?: boolean;
   recordingUrl?: string;
+  savedToChart?: boolean;
+  assignedToStaffId?: string;
+  assignedToStaffName?: string;
+  assignmentNote?: string;
+  assignmentPriority?: 'low' | 'medium' | 'high';
 }
 
 export interface AcceptCallRequest {
@@ -25,6 +30,18 @@ export interface AcceptCallRequest {
 export interface TransferCallRequest {
   callId: string;
   staffId: string;
+}
+
+export interface AssignCallRequest {
+  callId: string;
+  staffId: string;
+  note?: string;
+  priority: 'low' | 'medium' | 'high';
+}
+
+export interface SaveNotesToChartRequest {
+  callId: string;
+  notes: string;
 }
 
 // Message Types
@@ -60,6 +77,13 @@ export interface SendMessageRequest {
   type: 'IN_APP' | 'SMS';
 }
 
+export interface SendMultipleMessagesRequest {
+  clientIds: string[];
+  content: string;
+  type: 'IN_APP' | 'SMS';
+  templateId?: string;
+}
+
 // Voicemail Types
 export interface VoicemailResponse {
   voicemailId: string;
@@ -71,6 +95,14 @@ export interface VoicemailResponse {
   transcript?: string;
   createdAt: string;
   isRead: boolean;
+  aiSummary?: VoicemailSummary;
+}
+
+export interface VoicemailSummary {
+  summary: string;
+  actionItems: string[];
+  urgency: 'low' | 'medium' | 'high';
+  generatedAt: string;
 }
 
 // Staff Availability Types
@@ -108,6 +140,22 @@ export interface EmailResponse {
   createdAt: string;
 }
 
+export interface EmailTemplateResponse {
+  templateId: string;
+  name: string;
+  subject: string;
+  body: string;
+  category?: string;
+  createdAt: string;
+}
+
+export interface SendMultipleEmailsRequest {
+  recipients: string[];
+  subject: string;
+  body: string;
+  templateId?: string;
+}
+
 // Team Chat Types
 export interface ChatGroupResponse {
   groupId: string;
@@ -137,4 +185,22 @@ export interface CallStats {
   waitingCalls: number;
   missedCalls: number;
   totalToday: number;
+}
+
+// Follow-up Types
+export interface FollowUpRequest {
+  clientId: string;
+  clientName: string;
+  date: string;
+  time: string;
+  appointmentType: 'follow_up' | 'consultation' | 'therapy' | 'check_in';
+  notes?: string;
+}
+
+// Client for selection
+export interface ClientOption {
+  clientId: string;
+  clientName: string;
+  email?: string;
+  phoneNumber?: string;
 }

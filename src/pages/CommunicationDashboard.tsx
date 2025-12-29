@@ -1,19 +1,23 @@
 import { useState } from 'react';
-import { Phone, MessageSquare, Voicemail, Mail, Users, Headphones } from 'lucide-react';
+import { Phone, MessageSquare, Voicemail, Mail, Users, Headphones, Layers } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { UnifiedModule } from '@/components/communication/unified/UnifiedModule';
 import { CallCenterDashboard } from '@/components/communication/calls/CallCenterDashboard';
 import { MessagesModule } from '@/components/communication/messages/MessagesModule';
 import { VoicemailModule } from '@/components/communication/voicemail/VoicemailModule';
 import { MailboxModule } from '@/components/communication/mailbox/MailboxModule';
 import { TeamChatModule } from '@/components/communication/team-chat/TeamChatModule';
 import { useCommunication } from '@/hooks/useCommunication';
+import { useUnifiedCommunication } from '@/hooks/useUnifiedCommunication';
 
 export default function CommunicationDashboard() {
-  const [activeTab, setActiveTab] = useState('calls');
+  const [activeTab, setActiveTab] = useState('unified');
   const { unreadMessagesCount, unreadVoicemailsCount, unreadEmailsCount, unreadChatCount } = useCommunication();
+  const { totalUnreadCount } = useUnifiedCommunication();
 
   const tabs = [
+    { id: 'unified', label: 'Unified Inbox', icon: Layers, badge: totalUnreadCount },
     { id: 'calls', label: 'Calls', icon: Phone, badge: 0 },
     { id: 'messages', label: 'Messages', icon: MessageSquare, badge: unreadMessagesCount },
     { id: 'voicemails', label: 'Voicemails', icon: Voicemail, badge: unreadVoicemailsCount },
@@ -60,6 +64,10 @@ export default function CommunicationDashboard() {
               </TabsTrigger>
             ))}
           </TabsList>
+
+          <TabsContent value="unified" className="m-0">
+            <UnifiedModule />
+          </TabsContent>
 
           <TabsContent value="calls" className="m-0">
             <CallCenterDashboard />

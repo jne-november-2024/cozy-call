@@ -138,6 +138,7 @@ export interface EmailResponse {
   folder: 'inbox' | 'sent' | 'drafts' | 'trash';
   attachments?: string[];
   createdAt: string;
+  clientId?: string; // Optional client ID for unified inbox mapping
 }
 
 export interface EmailTemplateResponse {
@@ -203,4 +204,54 @@ export interface ClientOption {
   clientName: string;
   email?: string;
   phoneNumber?: string;
+}
+
+// Unified Omnichannel Types
+export type InteractionType = 'CALL' | 'MESSAGE' | 'VOICEMAIL' | 'EMAIL' | 'TEAM_CHAT';
+
+export interface UnifiedInteraction {
+  interactionId: string;
+  clientId: string;
+  clientName: string;
+  clientAvatar?: string;
+  type: InteractionType;
+  timestamp: string;
+  isRead: boolean;
+  isUnread?: boolean;
+  // Channel-specific data
+  callData?: CallResponse;
+  messageData?: MessageResponse;
+  voicemailData?: VoicemailResponse;
+  emailData?: EmailResponse;
+  // Unified preview
+  preview: string;
+  // Channel indicator
+  channelIcon?: string;
+  // Metadata
+  metadata?: {
+    duration?: number; // for calls/voicemails
+    attachments?: number; // for emails/messages
+    urgency?: 'low' | 'medium' | 'high';
+    status?: string;
+  };
+}
+
+export interface UnifiedClientThread {
+  clientId: string;
+  clientName: string;
+  clientAvatar?: string;
+  phoneNumber?: string;
+  email?: string;
+  // All interactions in chronological order
+  interactions: UnifiedInteraction[];
+  // Summary stats
+  unreadCount: number;
+  lastInteractionAt: string;
+  lastInteractionType: InteractionType;
+  lastInteractionPreview: string;
+  // Channel counts
+  callCount: number;
+  messageCount: number;
+  voicemailCount: number;
+  emailCount: number;
 }

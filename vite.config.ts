@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
   // 👇 IMPORTANT for GitHub Pages
-  base: "/cozy-call", // <-- replace this with your repo name
+  base: "/cozy-call/", // <-- replace this with your repo name
 
   server: {
     host: "::",
